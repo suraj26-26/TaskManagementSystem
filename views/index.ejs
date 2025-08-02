@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+     <link rel="icon" type="image/x-icon" href="/public/icon.ico">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Todo App</h1>
+        <div id="todoContainer">
+            <% if(todos && todos.length > 0) { %>
+                <% todos.forEach(todo => { %>
+                    <div id="todo-<%=todo._id %>">
+                        <label>
+                            <input type="checkbox" onchange="toggleTodo('<%= todo._id %>', this.checked)" <%= todo.completed ? 'checked' : '' %> >
+                            <span class="<%= todo.completed ? 'completed' : '' %>"><%= todo.description %></span>
+                        </label>
+                        <i class="fas fa-trash delete-icon" onclick="deleteTodo('<%= todo._id %>')" ></i>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <p id="noTodos">No todos found</p>
+            <% } %>        
+        </div>
+        <form id="addTodoform" onsubmit="addTodo(); return false;">
+            <input type="text" name="description" placeholder="Add a new todo" id="todoDescription">
+            <button type="submit">Add</button>
+        </form>
+        <a href="/logout">Logout</a>
+    </div>
+
+    <script>
+        async function toggleTodo(todoId, completed) {
+            try {
+                console.log(`Toggling todo ${todoId} to ${completed}`);
+                const response  = await fetch(`./todos/toggle/${todoId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type' : 'application/json'},
+                    body: JSON.stringify({completed})
+                });
+                if(!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Failed to toggle Todo: ${errorText}`);
+                }
+
+                const todoDiv  = document.getElementById(`todo-${todoId}`);
+                const todoSpan = todoDiv.querySelector('span');
+
+                if(!todoSpan) {
+                    throw new Error(`Span element not found for todo ${todoId}`);
+                }
+
+                if(completed) {
+                    todoSpan.classList.add('completed');
+                } else {
+                    todoSpan.classList.remove('completed');
+                }
+                console.log('Todo toggled successfully');
+            } catch (error) {
+                console.error('Error toggling todo:', error.message);
+                alert(`Failed to toggle todo: ${error.message}`);
+            }
+        }
+
+        async function addTodo() {
+            const description = document.getElementById('todoDescription').value;
+            if(!description) {
+                alert("Please enter a todo description.");
+                return;
+            }
+            try {
+                const response = await fetch('/todos', {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({description})
+                });
+                if(!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Failed to add todo: ${errorText}`);
+                }
+                const addedTodo = await response.json();
+                console.log('Added new todo: ', addedTodo);
+
+                const noTodoMessage = document.getElementById('noTodos');
+                if(noTodoMessage) {
+                    noTodoMessage.remove();
+                }
+
+                const todosContainer = document.getElementById('todoContainer');
+                const newTodoDiv = document.createElement('div');
+                newTodoDiv.id = `todo-${addedTodo._id}`;
+                const newTodoLabel = document.createElement('label');
+                const newTodoCheckbox = document.createElement('input');
+                newTodoCheckbox.type = 'checkbox';
+                newTodoCheckbox.onchange = function() { toggleTodo(addedTodo._id, this.checked); };
+                const newTodoSpan = document.createElement('span');
+                newTodoSpan.appendChild(document.createTextNode(addedTodo.description));
+                newTodoLabel.appendChild(newTodoCheckbox);
+                newTodoLabel.appendChild(newTodoSpan);
+                newTodoDiv.appendChild(newTodoLabel);
+
+                const deleteIcon = document.createElement('i');
+                deleteIcon.className = 'fas fa-trash delete-icon';
+                deleteIcon.onclick = function() { deleteTodo(addedTodo._id); };
+                newTodoDiv.appendChild(deleteIcon);
+
+                todosContainer.appendChild(newTodoDiv);
+
+                document.getElementById('todoDescription').value = '';
+            } catch (error) {
+                console.error('Failed to add todo:', error.message);
+                alert(`Failed to add todo: ${error.message}`);
+            }
+        }
+
+        async function deleteTodo(todoId) {
+            try {
+                const response = await fetch(`./todos/${todoId}`, {
+                    method : 'DELETE',
+                });
+                if(!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Failed to delete todo: ${errorText}`);
+                }
+
+                const todoDiv = document.getElementById(`todo-${todoId}`);
+                if(todoDiv) {
+                    todoDiv.remove();
+                }
+
+                console.log('Todo Deleted Successfully');
+            } catch (error) {
+                console.error('Error in deleting todo:', error.message);
+                alert(`Failed to delete todo: ${error.message}`);
+            }
+        }
+    </script>
+    
+</body>
+</html>
