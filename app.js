@@ -56,6 +56,17 @@ app.get('/register', (req, res) => {
     res.render('register');
 });
 
+app.get('/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            console.error('Logout error:', err);
+            return res.status(500).send('Could not log out.');
+        }
+        res.clearCookie('connect.sid');
+        res.redirect('/login?loggedOut=true');
+    });
+});
+
 app.get('/', async (req, res) => {
     if (!req.session.userId) {
         return res.redirect('/login');
