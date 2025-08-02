@@ -11,27 +11,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-   <!-- <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('loggedOut') === 'true') {
-        alert('You have been logged out successfully!');
-    }
-</script>-->
-<script>
-    // Check if URL has ?loggedOut=true
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('loggedOut') === 'true') {
-        Swal.fire({
-            icon: 'info',
-            title: 'Logged Out',
-            text: 'You have been logged out successfully!',
-            confirmButtonText: 'OK'
-        });
-    }
-</script>
-
-
-
 </head>
 <body>
     <h1>Suraj's Task pro</h1>
@@ -39,42 +18,76 @@
     <div class="container">
         <h2>Login</h2>
         <div id="loginError" style="color: red;"></div>
-        <form id="loginForm" onsubmit="loginUser(); return false;">
+        <form id="loginForm">
             <input type="text" name="username" id="loginUsername" placeholder="Username" required><br>
             <input type="password" name="password" id="loginPassword" placeholder="Password" required><br>
             <button type="submit">Login</button>
         </form>
         <p>Already have an account? <a href="/register">Register Here</a></p>
     </div>
+<script>
+    console.log("Login script loaded");
 
-    <script>
-        async function loginUser() {
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log("DOM fully loaded");
+
+        // Show logout success message if redirected after logout
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('loggedOut') === 'true') {
+            Swal.fire({
+                icon: 'info',
+                title: 'Logged Out',
+                text: 'You have been logged out successfully!',
+                confirmButtonText: 'OK'
+            });
+        }
+
+        const loginForm = document.getElementById('loginForm');
+        if (!loginForm) {
+            console.error("loginForm not found!");
+            return;
+        }
+
+        console.log("Attaching submit listener...");
+
+        loginForm.addEventListener('submit', async function (event) {
+            console.log("Login form submitted");
+            event.preventDefault();
+
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
             const loginError = document.getElementById('loginError');
-            const urlParams = new URLSearchParams(window.location.search);
+
             try {
                 const response = await fetch('/login', {
                     method: 'POST',
-                    headers: { 'Content-type':'application/json'},
+                    headers: { 'Content-type': 'application/json' },
                     body: JSON.stringify({ username, password })
                 });
-                if(!response.ok) {
+
+                if (!response.ok) {
                     const errorText = await response.text();
                     throw new Error(errorText);
                 }
+
                 Swal.fire({
-                        icon: 'success',
-                        title: 'Login!',
-                        text: 'User Login successfully!',
-                        confirmButtonText: 'OK'
-                   }).then(() => {
+                    icon: 'success',
+                    title: 'Login!',
+                    text: 'User logged in successfully!',
+                    confirmButtonText: 'OK'
+                }).then(() => {
                     window.location.href = '/';
                 });
+
             } catch (error) {
+                console.error("Login error:", error.message);
                 loginError.textContent = error.message;
             }
-        }
-    </script>
+        });
+    });
+</script>
+
+
+
 </body>
 </html>
